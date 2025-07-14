@@ -1,9 +1,9 @@
 name: Sign SSH Certificates
 
 on:
-  pull_request:
-    paths:
-      - 'requests/**'
+  push:
+    branches:
+      - main
 
   workflow_dispatch:
 
