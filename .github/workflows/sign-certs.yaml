@@ -48,7 +48,7 @@ jobs:
               -V +90d \
               "$pubkey"
 
-            mv "${pubkey}-cert.pub" "$cert_file"
+            mv "${pubkey%.*}-cert.pub" "$cert_file"
             echo "Generated cert: $cert_file"
           }
 
