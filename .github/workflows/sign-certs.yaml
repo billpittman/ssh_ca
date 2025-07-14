@@ -80,5 +80,5 @@ jobs:
         git config user.email "ssh-ca-bot@github.com"
         git add certs/
         git commit -m "Signed SSH certificates" || echo "No changes to commit"
-        git push origin HEAD:${{ github.head_ref }}
+        git push
 
