@@ -1,0 +1,89 @@
+name: Sign SSH Certificates
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  sign-certificates:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup SSH CA keys
+      run: |
+        echo "${{ secrets.SSH_HOST_CA }}" > ssh_host_ca
+        chmod 600 ssh_host_ca
+        echo "${{ secrets.SSH_USER_CA }}" > ssh_user_ca
+        chmod 600 ssh_user_ca
+
+    - name: Sign user and host keys if certs are missing
+      run: |
+          sign_key() {
+            local pubkey="$1"
+            local ca_key="$2"
+            local cert_dir="$3"
+            local principal="$4"
+            local sign_flags="$5"
+
+            local pub_filename=$(basename "$pubkey" .pub)
+            local cert_file="${cert_dir}/${pub_filename}-cert.pub"
+
+            mkdir -p "$cert_dir"
+
+            if [[ -f "$cert_file" ]]; then
+              echo "Skipping $pubkey: cert already exists at $cert_file"
+              return
+            fi
+
+            echo "Signing $pub_filename using $ca_key..."
+
+            ssh-keygen -s "$ca_key" \
+              $sign_flags \
+              -I "$principal" \
+              -V +90d \
+              "$pubkey"
+
+            mv "${pubkey%.*}-cert.pub" "$cert_file"
+            echo "Generated cert: $cert_file"
+          }
+
+          # Process user keys
+          find requests/user/ -type f -name '*.pub' | while read pubkey; do
+            user_dir=$(dirname "$pubkey")
+            username=$(basename "$user_dir")
+            cert_dir="certs/user/$username"
+            principal="$username"
+            sign_flags="-n bill"
+
+            sign_key "$pubkey" "ssh_user_ca" "$cert_dir" "$principal" "$sign_flags"
+          done
+
+          # Process host keys
+          find requests/host/ -type f -name '*.pub' | while read pubkey; do
+            host_dir=$(dirname "$pubkey")
+            hostname=$(basename "$host_dir")
+            cert_dir="certs/host/$hostname"
+            principal="$hostname"
+            sign_flags="-h"
+
+            sign_key "$pubkey" "ssh_host_ca" "$cert_dir" "$principal" "$sign_flags"
+          done
+
+    - name: Cleanup SSH CA keys
+      run: |
+        rm -f ssh_host_ca
+        rm -f ssh_user_ca
+
+    - name: Commit signed certificates
+      run: |
+        git config user.name "SSH CA Bot"
+        git config user.email "ssh-ca-bot@github.com"
+        git add certs/
+        git commit -m "Signed SSH certificates" || echo "No changes to commit"
+        git push
+
