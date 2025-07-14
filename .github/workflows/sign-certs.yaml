@@ -20,7 +20,6 @@ jobs:
         chmod 600 ssh_host_ca
         echo "${{ secrets.SSH_USER_CA }}" > ssh_user_ca
         chmod 600 ssh_user_ca
-        mkdir -p certs
 
     - name: Sign user and host keys if certs are missing
       run: |
@@ -61,7 +60,7 @@ jobs:
             principal="$username"
             sign_flags="-n bill"
 
-            sign_key "$pubkey" "ssh_ca_user" "$cert_dir" "$principal" "$sign_flags"
+            sign_key "$pubkey" "ssh_user_ca" "$cert_dir" "$principal" "$sign_flags"
           done
 
           # Process host keys
@@ -72,7 +71,7 @@ jobs:
             principal="$hostname"
             sign_flags="-h"
 
-            sign_key "$pubkey" "ssh_ca_host" "$cert_dir" "$principal" "$sign_flags"
+            sign_key "$pubkey" "ssh_host_ca" "$cert_dir" "$principal" "$sign_flags"
           done
 
 
