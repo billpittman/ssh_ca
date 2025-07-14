@@ -74,38 +74,11 @@ jobs:
             sign_key "$pubkey" "ssh_host_ca" "$cert_dir" "$principal" "$sign_flags"
           done
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#    - name: Commit signed certificates
-#      run: |
-#        git config user.name "github-actions"
-#        git config user.email "github-actions@github.com"
-#        git add certs/
-#        git commit -m "Signed SSH certificates for PR" || echo "No changes to commit"
-#        git push origin HEAD:${{ github.head_ref }}
+    - name: Commit signed certificates
+      run: |
+        git config user.name "SSH CA Bot"
+        git config user.email "ssh-ca-bot@github.com"
+        git add certs/
+        git commit -m "Signed SSH certificates" || echo "No changes to commit"
+        git push origin HEAD:${{ github.head_ref }}
 
