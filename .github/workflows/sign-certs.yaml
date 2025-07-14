@@ -1,10 +1,10 @@
 name: Sign SSH Certificates
 
-  #on:
-  #  pull_request:
-  #    paths:
-  #      - 'requests/**'
 on:
+  pull_request:
+    paths:
+      - 'requests/**'
+
   workflow_dispatch:
 
 jobs:
