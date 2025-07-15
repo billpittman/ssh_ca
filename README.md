@@ -14,5 +14,6 @@ ssh-ca-repo/
 │       └── <hostname>/
 │           └── ssh_host_ed25519.pub
 ├── certs/    ### Signed certificates
+├── config/   ### common config files
 └── README.md
 
