@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Git post-checkout hook to remove group writable bit from files in the 'certs' folder.
+# This hook runs after:
+# - git checkout <branch>
+# - git clone (initial checkout)
+# - git pull (implicitly, if it results in a new commit being checked out)
+#
+# Parameters passed to post-checkout:
+# $1: old HEAD ref
+# $2: new HEAD ref
+# $3: flag (1 for branch checkout, 0 for file checkout)
+# Note: These parameters are not strictly needed for this specific task,
+#       as we are operating on the working directory regardless of checkout type.
+
+# Define the target directory for certificates
+CERTS_DIR="certs"
+
+echo "Running post-checkout hook..."
+
+# Check if the 'certs' directory exists in the working tree
+if [ -d "$CERTS_DIR" ]; then
+    echo "Found '$CERTS_DIR' directory. Adjusting file permissions..."
+
+    # Find all regular files within the 'certs' directory and its subdirectories
+    # and remove the group writable bit (g-w).
+    # The '+x' at the end of find means it will pass multiple arguments to chmod,
+    # which is more efficient than '-exec chmod {} \;' for many files.
+    find "$CERTS_DIR" -type f -iname "*-cert.pub" -exec chmod g-w {} +
+
+    echo "Removed group writable bit from all files in '$CERTS_DIR/'."
+else
+    echo "Directory '$CERTS_DIR' not found. No file permissions to adjust."
+fi
+
+echo "Post-checkout hook finished."
+
+exit 0
+

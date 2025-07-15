@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+
+cd "$(git rev-parse --show-toplevel)"
+
+[ -f .git/hooks/post-checkout ] && echo Failed to install .git/hook/post-checkout, hook exists. && exit 1
+
+echo -n Installing .git/hooks/post-checkout hook
+ln -s ../../hooks/post-checkout .git/hooks/post-checkout
+echo " .... complete"
