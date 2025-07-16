@@ -81,9 +81,9 @@ jobs:
 
     - name: Commit signed certificates
       run: |
-        git config user.name "SSH CA Bot"
-        git config user.email "ssh-ca-bot@github.com"
+        git config user.name "SSH certbot"
+        git config user.email "certbot@justplainbill.com"
         git add certs/
-        git commit -m "Signed SSH certificates" || echo "No changes to commit"
+        git commit -m "Signed SSH certificates (certbot)" || echo "No changes to commit"
         git push
 
