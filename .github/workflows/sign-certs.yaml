@@ -23,6 +23,48 @@ jobs:
 
     - name: Sign user and host keys if certs are missing
       run: |
+          validate_cert() {
+            cert_file="$1"
+            ca_key="$2"
+
+            # If the certificate already exists, get its info for additional checking
+            existing_cert_info=$(ssh-keygen -L -f "$cert_file" 2>/dev/null)
+
+            # Check if the certificate is signed by the expected CA
+            # Signing CA: ED25519 SHA256:25f83Df2EIFp6yA7PtQzVtFVd0yPcvbZaCDvVo5OHRo (using ssh-ed25519)
+            cert_fingerprint=$(echo "$existing_cert_info" | grep "Signing CA" | awk '{print $4}')
+            ca_fingerprint=$(ssh-keygen -E sha256 -lf "$ca_key" | awk '{print $2}')
+            if [[ "$cert_fingerprint" != "$ca_fingerprint" ]]; then
+              echo "Certificate $cert_file is not signed by the expected CA ($cert_fingerprint != $ca_fingerprint)."
+              return 1
+            fi
+
+            # Check certificate expiration/active dates
+            # Valid: from 2025-07-16T07:29:00 to 2025-10-14T07:30:31
+            start_date_str=$(echo "$existing_cert_info" | grep "Valid:" | awk '{print $3}')
+            expire_date_str=$(echo "$existing_cert_info" | grep "Valid:" | awk '{print $5}')
+
+            # Convert dates to seconds since epoch for comparison
+            start_date=$(date -d "$start_date_str" +"%s")
+            expire_date=$(date -d "$expire_date_str" +"%s")
+            current_date=$(date -u +"%s")
+
+            # Check if the certificate is expired
+            if [[ $current_date -lt $start_date || $current_date -gt $expire_date ]] ; then
+              echo "Certificate $cert_file is expired or not yet valid."
+              return 1;
+            fi
+
+            # Check if the certificate is due to exipire in the next 30 days
+            # 30 days = 2592000 seconds (30 * 24 * 60 * 60)
+            if [[ $expire_date -lt $((current_date + 2592000)) ]]; then
+              echo "Certificate $cert_file is due to expire in the next 30 days. (re-signing)"
+              return 1
+            fi
+
+            return 0
+          }
+
           sign_key() {
             local pubkey="$1"
             local ca_key="$2"
@@ -36,8 +78,10 @@ jobs:
             mkdir -p "$cert_dir"
 
             if [[ -f "$cert_file" ]]; then
-              echo "Skipping $pubkey: cert already exists at $cert_file"
-              return
+              if validate_cert "$cert_file" "$ca_key"; then
+                echo "Skipping $pubkey: valid cert already exists at $cert_file"
+                return
+              fi
             fi
 
             echo "Signing $pub_filename using $ca_key..."
