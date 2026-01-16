@@ -54,10 +54,10 @@ jobs:
             # Check if the certificate is expired
             if [[ $current_date -lt $start_date || $current_date -gt $expire_date ]] ; then
               echo "Certificate $cert_file is expired or not yet valid."
-              return 1;
+              return 1
             fi
 
-            # Check if the certificate is due to exipire in the next 30 days
+            # Check if the certificate is due to expire in the next 30 days
             # 30 days = 2592000 seconds (30 * 24 * 60 * 60)
             if [[ $expire_date -lt $((current_date + 2592000)) ]]; then
               echo "Certificate $cert_file is due to expire in the next 30 days. (re-signing)"
