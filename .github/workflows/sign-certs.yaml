@@ -41,6 +41,12 @@ jobs:
               return 1
             fi
 
+            # Check if certificate is capable of expiration
+            if echo "$existing_cert_info" | grep "Valid:" | grep -qi "Forever" ; then
+              echo "Certificate $cert_file is valid forever (not renewing)."
+              return 0
+            fi
+
             # Check certificate expiration/active dates
             # Valid: from 2025-07-16T07:29:00 to 2025-10-14T07:30:31
             start_date_str=$(echo "$existing_cert_info" | grep "Valid:" | awk '{print $3}')
@@ -91,7 +97,6 @@ jobs:
             ssh-keygen -s "$ca_key" \
               $sign_flags \
               -I "$principal" \
-              -V +90d \
               "$pubkey"
 
             mv "${pubkey%.*}-cert.pub" "$cert_file"
@@ -104,7 +109,7 @@ jobs:
             username=$(basename "$user_dir")
             cert_dir="certs/user/$username"
             principal="$username"
-            sign_flags="-n bill"
+            sign_flags="-n bill -V +90d"
 
             sign_key "$pubkey" "ssh_user_ca" "$cert_dir" "$principal" "$sign_flags"
           done
