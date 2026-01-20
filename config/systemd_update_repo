@@ -8,4 +8,5 @@ HTTPS_URL="https://x-oauth-basic:$GITHUB_PAT@github.com/billpittman/ssh_ca.git"
 [ -z "$GITHUB_PAT" ] && echo "Github personal access token missing." && exit 1
 
 # perform update
-git pull "$HTTPS_URL" main 2>/dev/null
+git fetch --prune "$HTTPS_URL" 2>/dev/null
+git update-ref refs/heads/main refs/remotes/origin/main
