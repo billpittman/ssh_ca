@@ -1,12 +1,34 @@
 #!/bin/bash
-# GITHUB_PAT -- environment variable from systemd service file
-#
-set -e
+set -euo pipefail
 
+REPO_DIR="/home/bill/github/ssh_ca"
+BRANCH="main"
+LOCK_FILE="/tmp/git-sync.lock"
+
+# GitHub token from systemd
+[ -z "${GITHUB_PAT:-}" ] && echo "$(date) : GITHUB_PAT missing, exiting." && exit 1
 HTTPS_URL="https://x-oauth-basic:$GITHUB_PAT@github.com/billpittman/ssh_ca.git"
 
-[ -z "$GITHUB_PAT" ] && echo "Github personal access token missing." && exit 1
+# === Locking ===
+if [ -e "$LOCK_FILE" ]; then
+    echo "$(date) : Another sync already running, exiting."
+    exit 0
+fi
 
-# perform update
-git fetch --prune "$HTTPS_URL" 2>/dev/null
-git update-ref refs/heads/main refs/remotes/origin/main
+# Create lock file
+touch "$LOCK_FILE"
+
+# Ensure lock file is removed on exit or error
+trap 'rm -f "$LOCK_FILE"' EXIT
+
+echo "==== $(date) ===="
+echo "Syncing repo $REPO_DIR branch $BRANCH over HTTPS"
+
+cd "$REPO_DIR"
+
+# Fetch & reset without changing SSH remote
+git fetch "$HTTPS_URL" "$BRANCH"
+git reset --hard FETCH_HEAD
+
+echo "Sync completed successfully."
+
